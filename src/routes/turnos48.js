@@ -14,7 +14,7 @@ odontos.role = null; // default
 odontos.retryConnectionInterval = 1000; // reconnect interval in case of connection drop
 odontos.blobAsText = false;
 
-// Var para la conexion a WWA
+// Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
@@ -22,7 +22,7 @@ const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 // Hora de llamada a la función del JKMT
 var horaLlamada = "18"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT
-var tiempoRetrasoSQL = 10000;
+var tiempoRetrasoSQL = 10000 * 60;
 // Tiempo de intervalo entre consultas al PGSQL
 var tiempoRetrasoPGSQL = 5000;
 
@@ -166,6 +166,7 @@ module.exports = (app) => {
         ],
       };
 
+      // Funcion ajax para nodejs que realiza los envios a la API de TC
       axios
         .post(url, data)
         .then((response) => {
@@ -290,6 +291,49 @@ module.exports = (app) => {
       });
   });
 
+  // Metodos GET PUT y DELETE
+  app
+    .route("/api/turnos48/:id_turno")
+    .get((req, res) => {
+      Turnos48.findOne({
+        where: req.params,
+        include: [
+          {
+            model: Users,
+            attributes: ["user_fullname"],
+          },
+        ],
+      })
+        .then((result) => res.json(result))
+        .catch((error) => {
+          res.status(404).json({
+            msg: error.message,
+          });
+        });
+    })
+    .put((req, res) => {
+      Turnos48.update(req.body, {
+        where: req.params,
+      })
+        .then((result) => res.json(result))
+        .catch((error) => {
+          res.status(412).json({
+            msg: error.message,
+          });
+        });
+    })
+    .delete((req, res) => {
+      //const id = req.params.id;
+      Turnos48.destroy({
+        where: req.params,
+      })
+        .then(() => res.json(req.params))
+        .catch((error) => {
+          res.status(412).json({
+            msg: error.message,
+          });
+        });
+    });
   // // Turnos no enviados - estado_envio 2 o 3
   // app.route("/turnosNoNotificados").get((req, res) => {
   //   // Fecha de hoy 2022-02-30
@@ -359,46 +403,5 @@ module.exports = (app) => {
   //     });
   // });
 
-  app
-    .route("/api/turnos48/:id_turno")
-    .get((req, res) => {
-      Turnos48.findOne({
-        where: req.params,
-        include: [
-          {
-            model: Users,
-            attributes: ["user_fullname"],
-          },
-        ],
-      })
-        .then((result) => res.json(result))
-        .catch((error) => {
-          res.status(404).json({
-            msg: error.message,
-          });
-        });
-    })
-    .put((req, res) => {
-      Turnos48.update(req.body, {
-        where: req.params,
-      })
-        .then((result) => res.json(result))
-        .catch((error) => {
-          res.status(412).json({
-            msg: error.message,
-          });
-        });
-    })
-    .delete((req, res) => {
-      //const id = req.params.id;
-      Turnos48.destroy({
-        where: req.params,
-      })
-        .then(() => res.json(req.params))
-        .catch((error) => {
-          res.status(412).json({
-            msg: error.message,
-          });
-        });
-    });
+  
 };
