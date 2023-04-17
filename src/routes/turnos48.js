@@ -20,11 +20,11 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaLlamada = "7"; //AM
+var horaQuery = "15"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL
-var tiempoRetrasoSQL = 60000 * 60;
+var tiempoRetrasoSQL = 10000;
 // Tiempo de intervalo entre consultas al PGSQL para realizar los envios. 1 minuto
-var tiempoRetrasoPGSQL = 60000;
+var tiempoRetrasoPGSQL = 30000;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
 var tiempoRetrasoEnvios = 4000;
 
@@ -41,7 +41,7 @@ module.exports = (app) => {
     let diaHoy = hoyAhora.toString().slice(0, 3);
     console.log("Hoy es:", diaHoy, "la hora es:", horaAhora, ":", minutoAhora);
 
-    if (horaAhora == horaLlamada) {
+    if (horaAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
       console.log("La hora es: ", horaMinutoAhora);
@@ -86,20 +86,20 @@ module.exports = (app) => {
             }
             // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
             // Si no reemplazar el 0 por el 595
-            if (!e.TELEFONO_MOVIL) {
-              e.TELEFONO_MOVIL = "595000";
-              e.estado_envio = 2;
-            } else {
-              e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
-            }
-
-            // Reemplazar por mi nro para probar el envio
             // if (!e.TELEFONO_MOVIL) {
             //   e.TELEFONO_MOVIL = "595000";
             //   e.estado_envio = 2;
             // } else {
-            //   e.TELEFONO_MOVIL = "595986153301";
+            //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
             // }
+
+            // Reemplazar por mi nro para probar el envio
+            if (!e.TELEFONO_MOVIL) {
+              e.TELEFONO_MOVIL = "595000";
+              e.estado_envio = 2;
+            } else {
+              e.TELEFONO_MOVIL = "595986153301";
+            }
 
             Turnos48.create(e)
               //.then((result) => res.json(result))
@@ -166,6 +166,7 @@ module.exports = (app) => {
         .post(url, data)
         .then((response) => {
           console.log("La respuesta es:", response.data);
+
         })
         .catch((error) => {
           console.error("Ocurrió un error:", error);
