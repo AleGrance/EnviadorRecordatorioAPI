@@ -68,7 +68,7 @@ module.exports = (sequelize, DataType) => {
     //     type: DataType.INTEGER,
     //     allowNull: false
     // }
-  });
+  }, {freezeTableName: true});
 
   Turnos48.associate = (models) => {
     Turnos48.belongsTo(models.Users, {

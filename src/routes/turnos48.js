@@ -20,11 +20,13 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaLlamada = "18"; //AM
-// Tiempo de intervalo entre consultas a la base de JKMT
-var tiempoRetrasoSQL = 10000 * 60;
-// Tiempo de intervalo entre consultas al PGSQL
-var tiempoRetrasoPGSQL = 5000;
+var horaLlamada = "7"; //AM
+// Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL
+var tiempoRetrasoSQL = 60000 * 60;
+// Tiempo de intervalo entre consultas al PGSQL para realizar los envios. 1 minuto
+var tiempoRetrasoPGSQL = 60000;
+// Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
+var tiempoRetrasoEnvios = 4000;
 
 module.exports = (app) => {
   const Turnos48 = app.db.models.Turnos48;
@@ -41,13 +43,12 @@ module.exports = (app) => {
 
     if (horaAhora == horaLlamada) {
       //this.mood = "Trabajando! 👨🏻‍💻";
-      //injeccionFirebird();
-      iniciarEnvio();
+      injeccionFirebird();
       console.log("La hora es: ", horaMinutoAhora);
       console.log("Se consulta al JKMT");
     } else {
       //this.mood = "Durmiendo! 😴";
-      console.log("Turnos no asistidos ya no consulta al JKMT!");
+      console.log("Enviador recordatorio ya no consulta al JKMT!");
     }
   }, tiempoRetrasoSQL);
 
@@ -60,7 +61,7 @@ module.exports = (app) => {
       // db = DATABASE
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
-        "SELECT * FROM VW_RESUMEN_TURNOS_48HS",
+        "SELECT * FROM VW_RESUMEN_TURNOS_48HS ROWS 5",
         //"SELECT COUNT(*) FROM VW_RESUMEN_TURNOS_HOY",
         function (err, result) {
           console.log("Cant de turnos obtenidos del JKMT:", result.length);
@@ -107,13 +108,16 @@ module.exports = (app) => {
 
           // IMPORTANTE: cerrar la conexion
           db.detach();
+          console.log(
+            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse"
+          );
+          iniciarEnvio();
         }
       );
     });
   }
 
   let losTurnos = [];
-  let mensaje = "Buenas Sra./Sr.";
 
   function iniciarEnvio() {
     setTimeout(() => {
@@ -122,7 +126,7 @@ module.exports = (app) => {
       })
         .then((result) => {
           losTurnos = result;
-          console.log(result[0]);
+          console.log("Enviando turnos:", losTurnos.length);
         })
         .then(() => {
           enviarMensaje();
@@ -136,19 +140,10 @@ module.exports = (app) => {
   }
 
   // Envia los mensajes
-  let retraso = () => new Promise((r) => setTimeout(r, 3000));
+  let retraso = () => new Promise((r) => setTimeout(r, tiempoRetrasoEnvios));
   async function enviarMensaje() {
-    console.log("enviarMensaje");
+    console.log("Inicia el recorrido del for para enviar los turnos");
     for (let i = 0; i < losTurnos.length; i++) {
-      //   const data = {
-      //     message: "Buenas Sr/Sra " + losTurnos[i].CLIENTE,
-      //     phone: "595986153301",
-      //     mimeType: "",
-      //     data: "",
-      //     fileName: "",
-      //     fileSize: "",
-      //   };
-
       const data = {
         action: "send_template",
         phone: "595986153301",
@@ -402,6 +397,4 @@ module.exports = (app) => {
   //       });
   //     });
   // });
-
-  
 };

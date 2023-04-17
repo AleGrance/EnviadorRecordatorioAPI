@@ -1,5 +1,5 @@
 module.exports = {
-    database: 'recordatorioenviador',
+    database: 'thinkchat_enviados',
     username: 'postgres',
     password: 'Paraguay40*',
     params: {
