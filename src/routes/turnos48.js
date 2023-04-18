@@ -147,6 +147,7 @@ module.exports = (app) => {
   async function enviarMensaje() {
     console.log("Inicia el recorrido del for para enviar los turnos");
     for (let i = 0; i < losTurnos.length; i++) {
+      const turnoId = losTurnos[i].id_turno;
       const data = {
         action: "send_template",
         phone: "595214129000",
@@ -168,8 +169,20 @@ module.exports = (app) => {
       axios
         .post(url, data)
         .then((response) => {
-          console.log("La respuesta es:", response.data);
+          // Se actualiza el estado luego del envio
+          const body = {
+            estado_envio: 1,
+          };
 
+          Turnos48.update(body, {
+            where: { id_turno: turnoId },
+          })
+            .then((result) => res.json(result))
+            .catch((error) => {
+              res.status(412).json({
+                msg: error.message,
+              });
+            });
         })
         .catch((error) => {
           console.error("Ocurrió un error:", error);
