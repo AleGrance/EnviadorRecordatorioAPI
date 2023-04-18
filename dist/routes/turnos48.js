@@ -30,7 +30,7 @@ var url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 var templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "09:05"; //AM
+var horaQuery = "07:00"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de intervalo entre consultas al PGSQL y los envios. 1 minuto
@@ -42,7 +42,6 @@ module.exports = function (app) {
   var Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
-  injeccionFirebird();
   setInterval(function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
@@ -55,7 +54,7 @@ module.exports = function (app) {
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
-      //injeccionFirebird();
+      injeccionFirebird();
       console.log("Se consulta al JKMT COMENTADO");
     } else {
       //this.mood = "Durmiendo! 😴";
@@ -130,6 +129,9 @@ module.exports = function (app) {
   function iniciarEnvio() {
     setTimeout(function () {
       Turnos48.findAll({
+        where: {
+          estado_envio: 0
+        },
         order: [["createdAt", "DESC"]]
       }).then(function (result) {
         losTurnos = result;
@@ -160,40 +162,87 @@ module.exports = function (app) {
   */
   function _enviarMensaje() {
     _enviarMensaje = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-      var i, data;
-      return _regeneratorRuntime().wrap(function _callee$(_context) {
-        while (1) switch (_context.prev = _context.next) {
+      var _loop, i;
+      return _regeneratorRuntime().wrap(function _callee$(_context2) {
+        while (1) switch (_context2.prev = _context2.next) {
           case 0:
             console.log("Inicia el recorrido del for para enviar los turnos");
+            _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
+              var turnoId, data;
+              return _regeneratorRuntime().wrap(function _loop$(_context) {
+                while (1) switch (_context.prev = _context.next) {
+                  case 0:
+                    turnoId = losTurnos[i].id_turno;
+                    data = {
+                      action: "send_template",
+                      token: "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
+                      from: "595214129000",
+                      to: losTurnos[i].TELEFONO_MOVIL,
+                      template_id: templateThikchat,
+                      template_params: [losTurnos[i].CLIENTE, losTurnos[i].FECHA + " " + losTurnos[i].HORA, losTurnos[i].SUCURSAL, losTurnos[i].NOMBRE_COMERCIAL, losTurnos[i].CARNET]
+                    }; // Funcion ajax para nodejs que realiza los envios a la API de TC
+                    axios.post(url, data).then(function (response) {
+                      console.log(response.data);
+                      if (response.data.success == true) {
+                        //console.log("Enviado");
+                        // Se actualiza el estado a 1
+                        var body = {
+                          estado_envio: 1
+                        };
+                        Turnos48.update(body, {
+                          where: {
+                            id_turno: turnoId
+                          }
+                        })
+                        //.then((result) => res.json(result))
+                        ["catch"](function (error) {
+                          res.status(412).json({
+                            msg: error.message
+                          });
+                        });
+                      } else {
+                        //console.log("No Enviado");
+                        // Se actualiza el estado a 2
+                        var _body = {
+                          estado_envio: 2
+                        };
+                        Turnos48.update(_body, {
+                          where: {
+                            id_turno: turnoId
+                          }
+                        })
+                        //.then((result) => res.json(result))
+                        ["catch"](function (error) {
+                          res.status(412).json({
+                            msg: error.message
+                          });
+                        });
+                      }
+                    })["catch"](function (error) {
+                      console.error("Ocurrió un error:", error);
+                    });
+                    _context.next = 5;
+                    return retraso();
+                  case 5:
+                  case "end":
+                    return _context.stop();
+                }
+              }, _loop);
+            });
             i = 0;
-          case 2:
+          case 3:
             if (!(i < losTurnos.length)) {
-              _context.next = 10;
+              _context2.next = 8;
               break;
             }
-            data = {
-              action: "send_template",
-              phone: "595214129000",
-              token: "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
-              from: "595214129000",
-              to: losTurnos[i].TELEFONO_MOVIL,
-              template_id: templateThikchat,
-              template_params: [losTurnos[i].CLIENTE, losTurnos[i].FECHA + " " + losTurnos[i].HORA, losTurnos[i].SUCURSAL, losTurnos[i].NOMBRE_COMERCIAL, losTurnos[i].CARNET]
-            }; // Funcion ajax para nodejs que realiza los envios a la API de TC
-            axios.post(url, data).then(function (response) {
-              console.log("La respuesta es:", response.data);
-            })["catch"](function (error) {
-              console.error("Ocurrió un error:", error);
-            });
-            _context.next = 7;
-            return retraso();
-          case 7:
+            return _context2.delegateYield(_loop(), "t0", 5);
+          case 5:
             i++;
-            _context.next = 2;
+            _context2.next = 3;
             break;
-          case 10:
+          case 8:
           case "end":
-            return _context.stop();
+            return _context2.stop();
         }
       }, _callee);
     }));
