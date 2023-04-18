@@ -150,7 +150,6 @@ module.exports = (app) => {
       const turnoId = losTurnos[i].id_turno;
       const data = {
         action: "send_template",
-        phone: "595214129000",
         token:
           "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
         from: "595214129000",
@@ -169,20 +168,40 @@ module.exports = (app) => {
       axios
         .post(url, data)
         .then((response) => {
-          // Se actualiza el estado luego del envio
-          const body = {
-            estado_envio: 1,
-          };
+          console.log(response.data);
+          if (response.data.success == true) {
+            console.log("Enviado");
+            // Se actualiza el estado a 1
+            const body = {
+              estado_envio: 1,
+            };
 
-          Turnos48.update(body, {
-            where: { id_turno: turnoId },
-          })
-            .then((result) => res.json(result))
-            .catch((error) => {
-              res.status(412).json({
-                msg: error.message,
+            Turnos48.update(body, {
+              where: { id_turno: turnoId },
+            })
+              //.then((result) => res.json(result))
+              .catch((error) => {
+                res.status(412).json({
+                  msg: error.message,
+                });
               });
-            });
+          } else {
+            console.log("No Enviado");
+            // Se actualiza el estado a 2
+            const body = {
+              estado_envio: 2,
+            };
+
+            Turnos48.update(body, {
+              where: { id_turno: turnoId },
+            })
+              //.then((result) => res.json(result))
+              .catch((error) => {
+                res.status(412).json({
+                  msg: error.message,
+                });
+              });
+          }
         })
         .catch((error) => {
           console.error("Ocurrió un error:", error);
