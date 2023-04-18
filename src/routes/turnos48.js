@@ -20,11 +20,11 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "15"; //AM
-// Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL
-var tiempoRetrasoSQL = 10000;
-// Tiempo de intervalo entre consultas al PGSQL para realizar los envios. 1 minuto
-var tiempoRetrasoPGSQL = 30000;
+var horaQuery = "07:00"; //AM
+// Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
+var tiempoRetrasoSQL = 60000 * 60;
+// Tiempo de intervalo entre consultas al PGSQL y los envios. 1 minuto
+var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
 var tiempoRetrasoEnvios = 4000;
 
@@ -35,17 +35,19 @@ module.exports = (app) => {
   // Intervalo de consulta al JKMT
   setInterval(() => {
     let hoyAhora = new Date();
-    let horaAhora = hoyAhora.getHours();
-    let minutoAhora = hoyAhora.getMinutes();
-    let horaMinutoAhora = horaAhora + ":" + minutoAhora;
     let diaHoy = hoyAhora.toString().slice(0, 3);
-    console.log("Hoy es:", diaHoy, "la hora es:", horaAhora, ":", minutoAhora);
+    let fullHoraAhora = hoyAhora.toString().slice(16, 21);
 
-    if (horaAhora == horaQuery) {
+    // let horaAhora = hoyAhora.getHours();
+    // let minutoAhora = hoyAhora.getMinutes();
+    // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
+
+    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+
+    if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
-      console.log("La hora es: ", horaMinutoAhora);
-      console.log("Se consulta al JKMT");
+      console.log("Se consulta al JKMT COMENTADO");
     } else {
       //this.mood = "Durmiendo! 😴";
       console.log("Enviador recordatorio ya no consulta al JKMT!");
@@ -61,7 +63,7 @@ module.exports = (app) => {
       // db = DATABASE
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
-        "SELECT * FROM VW_RESUMEN_TURNOS_48HS ROWS 5",
+        "SELECT * FROM VW_RESUMEN_TURNOS_48HS",
         //"SELECT COUNT(*) FROM VW_RESUMEN_TURNOS_HOY",
         function (err, result) {
           console.log("Cant de turnos obtenidos del JKMT:", result.length);
@@ -86,20 +88,20 @@ module.exports = (app) => {
             }
             // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
             // Si no reemplazar el 0 por el 595
-            // if (!e.TELEFONO_MOVIL) {
-            //   e.TELEFONO_MOVIL = "595000";
-            //   e.estado_envio = 2;
-            // } else {
-            //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
-            // }
-
-            // Reemplazar por mi nro para probar el envio
             if (!e.TELEFONO_MOVIL) {
               e.TELEFONO_MOVIL = "595000";
               e.estado_envio = 2;
             } else {
-              e.TELEFONO_MOVIL = "595986153301";
+              e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
             }
+
+            // Reemplazar por mi nro para probar el envio
+            // if (!e.TELEFONO_MOVIL) {
+            //   e.TELEFONO_MOVIL = "595000";
+            //   e.estado_envio = 2;
+            // } else {
+            //   e.TELEFONO_MOVIL = "595986153301";
+            // }
 
             Turnos48.create(e)
               //.then((result) => res.json(result))
@@ -122,6 +124,7 @@ module.exports = (app) => {
   function iniciarEnvio() {
     setTimeout(() => {
       Turnos48.findAll({
+        where: { estado_envio: 0 },
         order: [["createdAt", "DESC"]],
       })
         .then((result) => {
@@ -146,11 +149,11 @@ module.exports = (app) => {
     for (let i = 0; i < losTurnos.length; i++) {
       const data = {
         action: "send_template",
-        phone: "595986153301",
+        phone: "595214129000",
         token:
           "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
         from: "595214129000",
-        to: "595974107341",
+        to: losTurnos[i].TELEFONO_MOVIL,
         template_id: templateThikchat,
         template_params: [
           losTurnos[i].CLIENTE,
