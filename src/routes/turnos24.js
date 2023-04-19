@@ -17,10 +17,10 @@ odontos.blobAsText = false;
 // Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
+const templateThikchat = "c98aaa86-7075-4931-aa77-5d78a8c42748";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "12:00"; //PM
+var horaQuery = "08:30"; //PM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -47,16 +47,16 @@ module.exports = (app) => {
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
-      console.log("Se consulta al JKMT");
+      console.log("Se consulta al JKMT 24hs");
     } else {
       //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio ya no consulta al JKMT!");
+      console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
     }
   }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
   function injeccionFirebird() {
-    console.log("Se actualiza el PSQL");
+    console.log("Se actualiza el PSQL 24hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
 
@@ -66,7 +66,7 @@ module.exports = (app) => {
         "SELECT * FROM VW_RESUMEN_TURNOS_24HS",
         
         function (err, result) {
-          console.log("Cant de turnos obtenidos del JKMT:", result.length);
+          console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
 
           // Recorre el array que contiene los datos e inserta en la base de postgresql
           result.forEach((e) => {
@@ -111,7 +111,7 @@ module.exports = (app) => {
           // IMPORTANTE: cerrar la conexion
           db.detach();
           console.log(
-            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse"
+            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 24hs"
           );
           iniciarEnvio();
         }
@@ -145,7 +145,7 @@ module.exports = (app) => {
   // Envia los mensajes
   let retraso = () => new Promise((r) => setTimeout(r, tiempoRetrasoEnvios));
   async function enviarMensaje() {
-    console.log("Inicia el recorrido del for para enviar los turnos");
+    console.log("Inicia el recorrido del for para enviar los turnos 24hs");
     for (let i = 0; i < losTurnos.length; i++) {
       const turnoId = losTurnos[i].id_turno;
       const data = {
