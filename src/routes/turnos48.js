@@ -44,6 +44,12 @@ module.exports = (app) => {
 
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
 
+    if (diaHoy == 'Fri' || diaHoy == 'Wed') {
+      console.log('Hoy es:', diaHoy, 'Se consulta al JKMT 72hs');
+      injeccionFirebird72();
+      return;
+    }
+
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
@@ -119,6 +125,71 @@ module.exports = (app) => {
     });
   }
 
+  // Consulta al JKMT
+  function injeccionFirebird72() {
+    console.log("Se actualiza el PSQL 72hs");
+    Firebird.attach(odontos, function (err, db) {
+      if (err) throw err;
+
+      // db = DATABASE
+      db.query(
+        // Trae los ultimos 50 registros de turnos del JKMT
+        "SELECT * FROM VW_RESUMEN_TURNOS_72HS ROWS 5",
+        
+        function (err, result) {
+          console.log("Cant de turnos 72hs obtenidos del JKMT:", result.length);
+
+          // Recorre el array que contiene los datos e inserta en la base de postgresql
+          result.forEach((e) => {
+            // Si el nro de cert trae NULL cambiar por 000000
+            if (!e.CARNET) {
+              e.CARNET = " ";
+            }
+            // Si no tiene plan
+            if (!e.PLAN_CLIENTE) {
+              e.PLAN_CLIENTE = " ";
+            }
+            // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
+            if (e.HORA[3] === "0") {
+              e.HORA = e.HORA + "0";
+            }
+            // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
+            if (e.HORA.length === 4 && e.HORA[0] === "1") {
+              e.HORA = e.HORA + "0";
+            }
+            // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
+            // Si no reemplazar el 0 por el 595
+            // if (!e.TELEFONO_MOVIL) {
+            //   e.TELEFONO_MOVIL = "595000";
+            //   e.estado_envio = 2;
+            // } else {
+            //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
+            // }
+
+            // Reemplazar por mi nro para probar el envio
+            if (!e.TELEFONO_MOVIL) {
+              e.TELEFONO_MOVIL = "595000";
+              e.estado_envio = 2;
+            } else {
+              e.TELEFONO_MOVIL = "595986153301";
+            }
+
+            Turnos48.create(e)
+              //.then((result) => res.json(result))
+              .catch((error) => console.log(error.message));
+          });
+
+          // IMPORTANTE: cerrar la conexion
+          db.detach();
+          console.log(
+            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs"
+          );
+          iniciarEnvio();
+        }
+      );
+    });
+  }
+
   let losTurnos = [];
 
   function iniciarEnvio() {
@@ -129,7 +200,7 @@ module.exports = (app) => {
       })
         .then((result) => {
           losTurnos = result;
-          console.log("Enviando turnos:", losTurnos.length);
+          console.log("Enviando turnos 48hs:", losTurnos.length);
         })
         .then(() => {
           enviarMensaje();
