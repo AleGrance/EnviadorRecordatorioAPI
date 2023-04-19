@@ -20,7 +20,7 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "c98aaa86-7075-4931-aa77-5d78a8c42748";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "08:00"; //PM
+var horaQuery = "09:00"; //PM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -81,9 +81,9 @@ module.exports = (app) => {
               e.PLAN_CLIENTE = " ";
             }
             // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
-            if (e.HORA[3] === "0") {
-              e.HORA = e.HORA + "0";
-            }
+            // if (e.HORA[3] === "0") {
+            //   e.HORA = e.HORA + "0";
+            // }
             // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
             if (e.HORA.length === 4 && e.HORA[0] === "1") {
               e.HORA = e.HORA + "0";
