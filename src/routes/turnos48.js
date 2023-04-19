@@ -48,16 +48,31 @@ module.exports = (app) => {
 
     if (fullHoraAhora == horaQuery48) {
       //this.mood = "Trabajando! 👨🏻‍💻";
-      injeccionFirebird();
-      console.log("Se consulta al JKMT");
-    } else {
+      injeccionFirebird48();
+      console.log("Se consulta al JKMT turnos 48hs");
+    } 
+
+    if (fullHoraAhora == horaQuery24) {
+      //this.mood = "Trabajando! 👨🏻‍💻";
+      injeccionFirebird24();
+      console.log("Se consulta al JKMT turnos 24hs");
+    } 
+    
+    if (fullHoraAhora != horaQuery48) {
       //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio ya no consulta al JKMT!");
+      console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
     }
+
+    if (fullHoraAhora != horaQuery24) {
+      //this.mood = "Durmiendo! 😴";
+      console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
+    }
+
+
   }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
-  function injeccionFirebird() {
+  function injeccionFirebird48() {
     console.log("Se actualiza el PSQL");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
