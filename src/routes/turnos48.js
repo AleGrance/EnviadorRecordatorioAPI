@@ -20,7 +20,8 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "07:00"; //AM
+var horaQuery48 = "07:00"; //AM
+var horaQuery24 = "12:00"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -33,6 +34,7 @@ module.exports = (app) => {
   const Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
+
   setInterval(() => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
@@ -44,7 +46,7 @@ module.exports = (app) => {
 
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
 
-    if (fullHoraAhora == horaQuery) {
+    if (fullHoraAhora == horaQuery48) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
       console.log("Se consulta al JKMT");

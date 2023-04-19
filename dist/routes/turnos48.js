@@ -33,7 +33,7 @@ var templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 var horaQuery = "07:00"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
-// Tiempo de intervalo entre consultas al PGSQL y los envios. 1 minuto
+// Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
 var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
 var tiempoRetrasoEnvios = 4000;
@@ -42,6 +42,7 @@ module.exports = function (app) {
   var Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
+  injeccionFirebird();
   setInterval(function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
@@ -55,7 +56,7 @@ module.exports = function (app) {
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
-      console.log("Se consulta al JKMT COMENTADO");
+      console.log("Se consulta al JKMT");
     } else {
       //this.mood = "Durmiendo! 😴";
       console.log("Enviador recordatorio ya no consulta al JKMT!");
@@ -71,9 +72,7 @@ module.exports = function (app) {
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_48HS",
-      //"SELECT COUNT(*) FROM VW_RESUMEN_TURNOS_HOY",
-      function (err, result) {
+      "SELECT * FROM VW_RESUMEN_TURNOS_48HS", function (err, result) {
         console.log("Cant de turnos obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
