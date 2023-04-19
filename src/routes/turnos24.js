@@ -20,7 +20,7 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "07:00"; //AM
+var horaQuery = "12:00"; //PM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -29,7 +29,7 @@ var tiempoRetrasoPGSQL = 1000 * 60;
 var tiempoRetrasoEnvios = 4000;
 
 module.exports = (app) => {
-  const Turnos48 = app.db.models.Turnos48;
+  const Turnos24 = app.db.models.Turnos24;
   const Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
@@ -47,23 +47,23 @@ module.exports = (app) => {
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
-      console.log("Se consulta al JKMT 48hs");
+      console.log("Se consulta al JKMT");
     } else {
       //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
+      console.log("Enviador recordatorio ya no consulta al JKMT!");
     }
   }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
   function injeccionFirebird() {
-    console.log("Se actualiza el PSQL 48hs");
+    console.log("Se actualiza el PSQL");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
 
       // db = DATABASE
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
-        "SELECT * FROM VW_RESUMEN_TURNOS_48HS",
+        "SELECT * FROM VW_RESUMEN_TURNOS_24HS",
         
         function (err, result) {
           console.log("Cant de turnos obtenidos del JKMT:", result.length);
@@ -103,7 +103,7 @@ module.exports = (app) => {
             //   e.TELEFONO_MOVIL = "595986153301";
             // }
 
-            Turnos48.create(e)
+            Turnos24.create(e)
               //.then((result) => res.json(result))
               .catch((error) => console.log(error.message));
           });
@@ -111,7 +111,7 @@ module.exports = (app) => {
           // IMPORTANTE: cerrar la conexion
           db.detach();
           console.log(
-            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs"
+            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse"
           );
           iniciarEnvio();
         }
@@ -123,7 +123,7 @@ module.exports = (app) => {
 
   function iniciarEnvio() {
     setTimeout(() => {
-      Turnos48.findAll({
+      Turnos24.findAll({
         where: { estado_envio: 0 },
         order: [["createdAt", "DESC"]],
       })
@@ -145,7 +145,7 @@ module.exports = (app) => {
   // Envia los mensajes
   let retraso = () => new Promise((r) => setTimeout(r, tiempoRetrasoEnvios));
   async function enviarMensaje() {
-    console.log("Inicia el recorrido del for para enviar los turnos 48hs");
+    console.log("Inicia el recorrido del for para enviar los turnos");
     for (let i = 0; i < losTurnos.length; i++) {
       const turnoId = losTurnos[i].id_turno;
       const data = {
@@ -176,7 +176,7 @@ module.exports = (app) => {
               estado_envio: 1,
             };
 
-            Turnos48.update(body, {
+            Turnos24.update(body, {
               where: { id_turno: turnoId },
             })
               //.then((result) => res.json(result))
@@ -192,7 +192,7 @@ module.exports = (app) => {
               estado_envio: 2,
             };
 
-            Turnos48.update(body, {
+            Turnos24.update(body, {
               where: { id_turno: turnoId },
             })
               //.then((result) => res.json(result))
@@ -218,9 +218,9 @@ module.exports = (app) => {
   */
 
   app
-    .route("/api/turnos48")
+    .route("/api/turnos24")
     .get((req, res) => {
-      Turnos48.findAll({
+      Turnos24.findAll({
         order: [["createdAt", "DESC"]],
       })
         .then((result) => res.json(result))
@@ -232,14 +232,14 @@ module.exports = (app) => {
     })
     .post((req, res) => {
       console.log(req.body);
-      Turnos48.create(req.body)
+      Turnos24.create(req.body)
         .then((result) => res.json(result))
         .catch((error) => res.json(error));
     });
 
   // Trae los turnos que tengan en el campo estado_envio = 0
-  app.route("/api/turnos48Pendientes").get((req, res) => {
-    Turnos48.findAll({
+  app.route("/api/turnos24Pendientes").get((req, res) => {
+    Turnos24.findAll({
       where: { estado_envio: 0 },
       order: [["FECHA_CREACION", "ASC"]],
       //limit: 5
@@ -253,11 +253,11 @@ module.exports = (app) => {
   });
 
   // Trae los turnos que ya fueron notificados hoy
-  app.route("/api/turnos48Notificados").get((req, res) => {
+  app.route("/api/turnos24Notificados").get((req, res) => {
     // Fecha de hoy 2022-02-30
     let fechaHoy = new Date().toISOString().slice(0, 10);
 
-    Turnos48.count({
+    Turnos24.count({
       where: {
         [Op.and]: [
           { estado_envio: 1 },
@@ -279,7 +279,7 @@ module.exports = (app) => {
   });
 
   // Trae la cantidad de turnos enviados por rango de fecha desde hasta
-  app.route("/api/turnos48NotificadosFecha").post((req, res) => {
+  app.route("/api/turnos24NotificadosFecha").post((req, res) => {
     let fechaHoy = new Date().toISOString().slice(0, 10);
     let { fecha_desde, fecha_hasta } = req.body;
 
@@ -298,7 +298,7 @@ module.exports = (app) => {
 
     console.log(req.body);
 
-    Turnos48.count({
+    Turnos24.count({
       where: {
         [Op.and]: [
           { estado_envio: 1 },
@@ -324,9 +324,9 @@ module.exports = (app) => {
 
   // Metodos GET PUT y DELETE
   app
-    .route("/api/turnos48/:id_turno")
+    .route("/api/turnos24/:id_turno")
     .get((req, res) => {
-      Turnos48.findOne({
+      Turnos24.findOne({
         where: req.params,
         include: [
           {
@@ -343,7 +343,7 @@ module.exports = (app) => {
         });
     })
     .put((req, res) => {
-      Turnos48.update(req.body, {
+      Turnos24.update(req.body, {
         where: req.params,
       })
         .then((result) => res.json(result))
@@ -355,7 +355,7 @@ module.exports = (app) => {
     })
     .delete((req, res) => {
       //const id = req.params.id;
-      Turnos48.destroy({
+      Turnos24.destroy({
         where: req.params,
       })
         .then(() => res.json(req.params))
