@@ -27,10 +27,10 @@ odontos.blobAsText = false;
 // Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 var url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-var templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
+var templateThikchat = "c98aaa86-7075-4931-aa77-5d78a8c42748";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "07:00"; //AM
+var horaQuery = "09:00"; //PM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -38,12 +38,12 @@ var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
 var tiempoRetrasoEnvios = 4000;
 module.exports = function (app) {
-  var Turnos48 = app.db.models.Turnos48;
+  var Turnos24 = app.db.models.Turnos24;
   var Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
   //injeccionFirebird()
-  iniciarEnvio();
+
   setInterval(function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
@@ -54,94 +54,27 @@ module.exports = function (app) {
     // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
 
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    if (diaHoy == 'Wed' || diaHoy == 'Sat') {
-      console.log('Hoy es:', diaHoy, 'Se consulta al JKMT 72hs');
-      injeccionFirebird72();
-      return;
-    }
     if (fullHoraAhora == horaQuery) {
       //this.mood = "Trabajando! 👨🏻‍💻";
       injeccionFirebird();
-      console.log("Se consulta al JKMT 48hs");
+      console.log("Se consulta al JKMT 24hs");
     } else {
       //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
+      console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
     }
   }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
   function injeccionFirebird() {
-    console.log("Se actualiza el PSQL 48hs");
+    console.log("Se actualiza el PSQL 24hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
 
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_48HS", function (err, result) {
-        console.log("Cant de turnos obtenidos del JKMT:", result.length);
-
-        // Recorre el array que contiene los datos e inserta en la base de postgresql
-        result.forEach(function (e) {
-          // Si el nro de cert trae NULL cambiar por 000000
-          if (!e.CARNET) {
-            e.CARNET = " ";
-          }
-          // Si no tiene plan
-          if (!e.PLAN_CLIENTE) {
-            e.PLAN_CLIENTE = " ";
-          }
-          // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
-          if (e.HORA[3] === "0") {
-            e.HORA = e.HORA + "0";
-          }
-          // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
-          // if (e.HORA.length === 4 && e.HORA[0] === "1") {
-          //   e.HORA = e.HORA + "0";
-          // }
-          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
-          // Si no reemplazar el 0 por el 595
-          if (!e.TELEFONO_MOVIL) {
-            e.TELEFONO_MOVIL = "595000";
-            e.estado_envio = 2;
-          } else {
-            e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
-          }
-
-          // Reemplazar por mi nro para probar el envio
-          // if (!e.TELEFONO_MOVIL) {
-          //   e.TELEFONO_MOVIL = "595000";
-          //   e.estado_envio = 2;
-          // } else {
-          //   e.TELEFONO_MOVIL = "595986153301";
-          // }
-
-          Turnos48.create(e)
-          //.then((result) => res.json(result))
-          ["catch"](function (error) {
-            return console.log(error.message);
-          });
-        });
-
-        // IMPORTANTE: cerrar la conexion
-        db.detach();
-        console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs");
-        iniciarEnvio();
-      });
-    });
-  }
-
-  // Consulta al JKMT
-  function injeccionFirebird72() {
-    console.log("Se actualiza el PSQL 72hs");
-    Firebird.attach(odontos, function (err, db) {
-      if (err) throw err;
-
-      // db = DATABASE
-      db.query(
-      // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_72HS ROWS 5", function (err, result) {
-        console.log("Cant de turnos 72hs obtenidos del JKMT:", result.length);
+      "SELECT * FROM VW_RESUMEN_TURNOS_24HS ROWS 5", function (err, result) {
+        console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
         result.forEach(function (e) {
@@ -177,7 +110,7 @@ module.exports = function (app) {
           } else {
             e.TELEFONO_MOVIL = "595986153301";
           }
-          Turnos48.create(e)
+          Turnos24.create(e)
           //.then((result) => res.json(result))
           ["catch"](function (error) {
             return console.log(error.message);
@@ -186,7 +119,7 @@ module.exports = function (app) {
 
         // IMPORTANTE: cerrar la conexion
         db.detach();
-        console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs");
+        console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 24hs");
         iniciarEnvio();
       });
     });
@@ -194,14 +127,14 @@ module.exports = function (app) {
   var losTurnos = [];
   function iniciarEnvio() {
     setTimeout(function () {
-      Turnos48.findAll({
+      Turnos24.findAll({
         where: {
           estado_envio: 0
         },
         order: [["createdAt", "DESC"]]
       }).then(function (result) {
         losTurnos = result;
-        console.log("Enviando turnos 48hs:", losTurnos.length);
+        console.log("Enviando turnos 24hs:", losTurnos.length);
       }).then(function () {
         enviarMensaje();
       })["catch"](function (error) {
@@ -232,7 +165,7 @@ module.exports = function (app) {
       return _regeneratorRuntime().wrap(function _callee$(_context2) {
         while (1) switch (_context2.prev = _context2.next) {
           case 0:
-            console.log("Inicia el recorrido del for para enviar los turnos 48hs");
+            console.log("Inicia el recorrido del for para enviar los turnos 24hs");
             _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
               var turnoId, data;
               return _regeneratorRuntime().wrap(function _loop$(_context) {
@@ -245,7 +178,7 @@ module.exports = function (app) {
                       from: "595214129000",
                       to: losTurnos[i].TELEFONO_MOVIL,
                       template_id: templateThikchat,
-                      template_params: [losTurnos[i].CLIENTE, losTurnos[i].FECHA + " " + losTurnos[i].HORA, losTurnos[i].SUCURSAL, losTurnos[i].NOMBRE_COMERCIAL, losTurnos[i].CARNET]
+                      template_params: []
                     }; // Funcion ajax para nodejs que realiza los envios a la API de TC
                     axios.post(url, data).then(function (response) {
                       console.log(response.data);
@@ -255,7 +188,7 @@ module.exports = function (app) {
                         var body = {
                           estado_envio: 1
                         };
-                        Turnos48.update(body, {
+                        Turnos24.update(body, {
                           where: {
                             id_turno: turnoId
                           }
@@ -272,7 +205,7 @@ module.exports = function (app) {
                         var _body = {
                           estado_envio: 2
                         };
-                        Turnos48.update(_body, {
+                        Turnos24.update(_body, {
                           where: {
                             id_turno: turnoId
                           }
@@ -314,8 +247,8 @@ module.exports = function (app) {
     }));
     return _enviarMensaje.apply(this, arguments);
   }
-  app.route("/api/turnos48").get(function (req, res) {
-    Turnos48.findAll({
+  app.route("/api/turnos24").get(function (req, res) {
+    Turnos24.findAll({
       order: [["createdAt", "DESC"]]
     }).then(function (result) {
       return res.json(result);
@@ -326,7 +259,7 @@ module.exports = function (app) {
     });
   }).post(function (req, res) {
     console.log(req.body);
-    Turnos48.create(req.body).then(function (result) {
+    Turnos24.create(req.body).then(function (result) {
       return res.json(result);
     })["catch"](function (error) {
       return res.json(error);
@@ -334,8 +267,8 @@ module.exports = function (app) {
   });
 
   // Trae los turnos que tengan en el campo estado_envio = 0
-  app.route("/api/turnos48Pendientes").get(function (req, res) {
-    Turnos48.findAll({
+  app.route("/api/turnos24Pendientes").get(function (req, res) {
+    Turnos24.findAll({
       where: {
         estado_envio: 0
       },
@@ -351,10 +284,10 @@ module.exports = function (app) {
   });
 
   // Trae los turnos que ya fueron notificados hoy
-  app.route("/api/turnos48Notificados").get(function (req, res) {
+  app.route("/api/turnos24Notificados").get(function (req, res) {
     // Fecha de hoy 2022-02-30
     var fechaHoy = new Date().toISOString().slice(0, 10);
-    Turnos48.count({
+    Turnos24.count({
       where: _defineProperty({}, Op.and, [{
         estado_envio: 1
       }, {
@@ -371,7 +304,7 @@ module.exports = function (app) {
   });
 
   // Trae la cantidad de turnos enviados por rango de fecha desde hasta
-  app.route("/api/turnos48NotificadosFecha").post(function (req, res) {
+  app.route("/api/turnos24NotificadosFecha").post(function (req, res) {
     var fechaHoy = new Date().toISOString().slice(0, 10);
     var _req$body = req.body,
       fecha_desde = _req$body.fecha_desde,
@@ -387,7 +320,7 @@ module.exports = function (app) {
       fecha_desde = fecha_hasta;
     }
     console.log(req.body);
-    Turnos48.count({
+    Turnos24.count({
       where: _defineProperty({}, Op.and, [{
         estado_envio: 1
       }, {
@@ -404,8 +337,8 @@ module.exports = function (app) {
   });
 
   // Metodos GET PUT y DELETE
-  app.route("/api/turnos48/:id_turno").get(function (req, res) {
-    Turnos48.findOne({
+  app.route("/api/turnos24/:id_turno").get(function (req, res) {
+    Turnos24.findOne({
       where: req.params,
       include: [{
         model: Users,
@@ -419,7 +352,7 @@ module.exports = function (app) {
       });
     });
   }).put(function (req, res) {
-    Turnos48.update(req.body, {
+    Turnos24.update(req.body, {
       where: req.params
     }).then(function (result) {
       return res.json(result);
@@ -430,7 +363,7 @@ module.exports = function (app) {
     });
   })["delete"](function (req, res) {
     //const id = req.params.id;
-    Turnos48.destroy({
+    Turnos24.destroy({
       where: req.params
     }).then(function () {
       return res.json(req.params);

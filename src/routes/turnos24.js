@@ -17,7 +17,8 @@ odontos.blobAsText = false;
 // Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-const templateThikchat = "c98aaa86-7075-4931-aa77-5d78a8c42748";
+// Estimado Cliente, Odontos le informa que, como no hemos recibido su confirmación de asistencia al turno, el mismo será cancelado. [Cancelar turno] [Confirmar turno]
+const templateThikchat = "c2a1bc33-6a72-4fbf-bf0e-954759f8e547";
 
 // Hora de llamada a la función del JKMT
 var horaQuery = "09:00"; //PM
@@ -65,7 +66,7 @@ module.exports = (app) => {
       // db = DATABASE
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
-        "SELECT * FROM VW_RESUMEN_TURNOS_24HS ROWS 5",
+        "SELECT * FROM VW_RESUMEN_TURNOS_24HS",
         
         function (err, result) {
           console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
@@ -85,25 +86,26 @@ module.exports = (app) => {
             //   e.HORA = e.HORA + "0";
             // }
             // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
-            if (e.HORA.length === 4 && e.HORA[0] === "1") {
-              e.HORA = e.HORA + "0";
-            }
-            // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
-            // Si no reemplazar el 0 por el 595
-            // if (!e.TELEFONO_MOVIL) {
-            //   e.TELEFONO_MOVIL = "595000";
-            //   e.estado_envio = 2;
-            // } else {
-            //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
+            // if (e.HORA.length === 4 && e.HORA[0] === "1") {
+            //   e.HORA = e.HORA + "0";
             // }
 
-            // Reemplazar por mi nro para probar el envio
+            // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
+            // Si no reemplazar el 0 por el 595
             if (!e.TELEFONO_MOVIL) {
               e.TELEFONO_MOVIL = "595000";
               e.estado_envio = 2;
             } else {
-              e.TELEFONO_MOVIL = "595986153301";
+              e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
             }
+
+            // Reemplazar por mi nro para probar el envio
+            // if (!e.TELEFONO_MOVIL) {
+            //   e.TELEFONO_MOVIL = "595000";
+            //   e.estado_envio = 2;
+            // } else {
+            //   e.TELEFONO_MOVIL = "595986153301";
+            // }
 
             Turnos24.create(e)
               //.then((result) => res.json(result))
