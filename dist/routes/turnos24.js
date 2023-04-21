@@ -10,6 +10,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 var _require = require("sequelize"),
   Op = _require.Op;
 var axios = require("axios");
+var cron = require("node-cron");
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -27,10 +28,11 @@ odontos.blobAsText = false;
 // Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 var url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-var templateThikchat = "c98aaa86-7075-4931-aa77-5d78a8c42748";
+// Estimado Cliente, Odontos le informa que, como no hemos recibido su confirmación de asistencia al turno, el mismo será cancelado. [Cancelar turno] [Confirmar turno]
+var templateThikchat = "c2a1bc33-6a72-4fbf-bf0e-954759f8e547";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "09:00"; //PM
+var horaQuery = "08:00"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -42,30 +44,39 @@ module.exports = function (app) {
   var Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
-  //injeccionFirebird()
-
-  setInterval(function () {
+  // Ejecutar la funcion de 24hs De Lunes(1) a Viernes(5) a las 08:00am
+  cron.schedule("00 8 * * 1-5", function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-    // let horaAhora = hoyAhora.getHours();
-    // let minutoAhora = hoyAhora.getMinutes();
-    // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    if (fullHoraAhora == horaQuery) {
-      //this.mood = "Trabajando! 👨🏻‍💻";
-      injeccionFirebird();
-      console.log("Se consulta al JKMT 24hs");
-    } else {
-      //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
-    }
-  }, tiempoRetrasoSQL);
+    console.log("CRON: Se consulta al JKMT 24hs");
+    injeccionFirebird24();
+  });
+
+  // setInterval(() => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+  //   // let horaAhora = hoyAhora.getHours();
+  //   // let minutoAhora = hoyAhora.getMinutes();
+  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
+
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+
+  //   if (fullHoraAhora == horaQuery) {
+  //     //this.mood = "Trabajando! 👨🏻‍💻";
+  //     injeccionFirebird();
+  //     console.log("Se consulta al JKMT 24hs");
+  //   } else {
+  //     //this.mood = "Durmiendo! 😴";
+  //     console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
+  //   }
+  // }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
-  function injeccionFirebird() {
+  function injeccionFirebird24() {
     console.log("Se actualiza el PSQL 24hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
@@ -73,7 +84,7 @@ module.exports = function (app) {
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_24HS ROWS 5", function (err, result) {
+      "SELECT * FROM VW_RESUMEN_TURNOS_24HS", function (err, result) {
         console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
@@ -91,25 +102,27 @@ module.exports = function (app) {
           //   e.HORA = e.HORA + "0";
           // }
           // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
-          if (e.HORA.length === 4 && e.HORA[0] === "1") {
-            e.HORA = e.HORA + "0";
-          }
-          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
-          // Si no reemplazar el 0 por el 595
-          // if (!e.TELEFONO_MOVIL) {
-          //   e.TELEFONO_MOVIL = "595000";
-          //   e.estado_envio = 2;
-          // } else {
-          //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
+          // if (e.HORA.length === 4 && e.HORA[0] === "1") {
+          //   e.HORA = e.HORA + "0";
           // }
 
-          // Reemplazar por mi nro para probar el envio
+          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
+          // Si no reemplazar el 0 por el 595
           if (!e.TELEFONO_MOVIL) {
             e.TELEFONO_MOVIL = "595000";
             e.estado_envio = 2;
           } else {
-            e.TELEFONO_MOVIL = "595986153301";
+            e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
           }
+
+          // Reemplazar por mi nro para probar el envio
+          // if (!e.TELEFONO_MOVIL) {
+          //   e.TELEFONO_MOVIL = "595000";
+          //   e.estado_envio = 2;
+          // } else {
+          //   e.TELEFONO_MOVIL = "595986153301";
+          // }
+
           Turnos24.create(e)
           //.then((result) => res.json(result))
           ["catch"](function (error) {

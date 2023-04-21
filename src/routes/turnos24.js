@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const axios = require("axios");
+const cron = require("node-cron");
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -21,7 +22,7 @@ const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "c2a1bc33-6a72-4fbf-bf0e-954759f8e547";
 
 // Hora de llamada a la función del JKMT
-var horaQuery = "09:00"; //PM
+var horaQuery = "08:00"; //AM
 // Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
 var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
@@ -34,31 +35,40 @@ module.exports = (app) => {
   const Users = app.db.models.Users;
 
   // Intervalo de consulta al JKMT
-  //injeccionFirebird()
-
-  setInterval(() => {
+  // Ejecutar la funcion de 24hs De Lunes(1) a Viernes(5) a las 08:00am
+  cron.schedule("00 8 * * 1-5", () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);
 
-    // let horaAhora = hoyAhora.getHours();
-    // let minutoAhora = hoyAhora.getMinutes();
-    // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log("CRON: Se consulta al JKMT 24hs");
+    injeccionFirebird24();
+  });
 
-    if (fullHoraAhora == horaQuery) {
-      //this.mood = "Trabajando! 👨🏻‍💻";
-      injeccionFirebird();
-      console.log("Se consulta al JKMT 24hs");
-    } else {
-      //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
-    }
-  }, tiempoRetrasoSQL);
+  // setInterval(() => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+  //   // let horaAhora = hoyAhora.getHours();
+  //   // let minutoAhora = hoyAhora.getMinutes();
+  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
+
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+
+  //   if (fullHoraAhora == horaQuery) {
+  //     //this.mood = "Trabajando! 👨🏻‍💻";
+  //     injeccionFirebird();
+  //     console.log("Se consulta al JKMT 24hs");
+  //   } else {
+  //     //this.mood = "Durmiendo! 😴";
+  //     console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
+  //   }
+  // }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
-  function injeccionFirebird() {
+  function injeccionFirebird24() {
     console.log("Se actualiza el PSQL 24hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
@@ -67,7 +77,7 @@ module.exports = (app) => {
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
         "SELECT * FROM VW_RESUMEN_TURNOS_24HS",
-        
+
         function (err, result) {
           console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
 

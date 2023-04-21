@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const axios = require("axios");
+const cron = require('node-cron');
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -32,38 +33,58 @@ module.exports = (app) => {
   const Turnos48 = app.db.models.Turnos48;
   const Users = app.db.models.Users;
 
-  // Intervalo de consulta al JKMT
-  //injeccionFirebird()
-
-  setInterval(() => {
+  // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
+  cron.schedule('00 8 * * 5,6', () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-    // let horaAhora = hoyAhora.getHours();
-    // let minutoAhora = hoyAhora.getMinutes();
-    // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
+    
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log('CRON: Se consulta al JKMT 72hs');
+    injeccionFirebird72();
+  });
 
-    if (diaHoy == 'Wed' || diaHoy == 'Sat') {
-      console.log('Hoy es:', diaHoy, 'Se consulta al JKMT 72hs');
-      injeccionFirebird72();
-      return;
-    }
+  // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
+  cron.schedule('00 7 * * 1-4', () => {
+    let hoyAhora = new Date();
+    let diaHoy = hoyAhora.toString().slice(0, 3);
+    let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+    
+    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log('CRON: Se consulta al JKMT 48hs');
+    injeccionFirebird48();
+  });
 
-    if (fullHoraAhora == horaQuery) {
-      //this.mood = "Trabajando! 👨🏻‍💻";
-      injeccionFirebird();
-      console.log("Se consulta al JKMT 48hs");
-    } else {
-      //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
-    }
-  }, tiempoRetrasoSQL);
+  // Intervalo de consulta al JKMT
+  // setInterval(() => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+  //   // let horaAhora = hoyAhora.getHours();
+  //   // let minutoAhora = hoyAhora.getMinutes();
+  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
+
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+
+  //   // Si es Viernes y es la hora indicada no se ejecuta nada. Lo mismo si es Sabado
+  //   if (diaHoy == 'Fri' && fullHoraAhora == horaQuery || diaHoy == 'Sat' && fullHoraAhora == horaQuery ) {
+  //     console.log("return");
+  //     return;
+  //   }
+
+  //   if (fullHoraAhora == horaQuery) {
+  //     //this.mood = "Trabajando! 👨🏻‍💻";
+  //     injeccionFirebird();
+  //     console.log("Se consulta al JKMT 48hs");
+  //   } else {
+  //     //this.mood = "Durmiendo! 😴";
+  //     console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
+  //   }
+  // }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
-  function injeccionFirebird() {
+  function injeccionFirebird48() {
     console.log("Se actualiza el PSQL 48hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;

@@ -10,6 +10,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 var _require = require("sequelize"),
   Op = _require.Op;
 var axios = require("axios");
+var cron = require('node-cron');
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -41,36 +42,56 @@ module.exports = function (app) {
   var Turnos48 = app.db.models.Turnos48;
   var Users = app.db.models.Users;
 
-  // Intervalo de consulta al JKMT
-  //injeccionFirebird()
-  iniciarEnvio();
-  setInterval(function () {
+  // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
+  cron.schedule('00 8 * * 5,6', function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-    // let horaAhora = hoyAhora.getHours();
-    // let minutoAhora = hoyAhora.getMinutes();
-    // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    if (diaHoy == 'Wed' || diaHoy == 'Sat') {
-      console.log('Hoy es:', diaHoy, 'Se consulta al JKMT 72hs');
-      injeccionFirebird72();
-      return;
-    }
-    if (fullHoraAhora == horaQuery) {
-      //this.mood = "Trabajando! 👨🏻‍💻";
-      injeccionFirebird();
-      console.log("Se consulta al JKMT 48hs");
-    } else {
-      //this.mood = "Durmiendo! 😴";
-      console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
-    }
-  }, tiempoRetrasoSQL);
+    console.log('CRON: Se consulta al JKMT 72hs');
+    injeccionFirebird72();
+  });
+
+  // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
+  cron.schedule('00 7 * * 1-4', function () {
+    var hoyAhora = new Date();
+    var diaHoy = hoyAhora.toString().slice(0, 3);
+    var fullHoraAhora = hoyAhora.toString().slice(16, 21);
+    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log('CRON: Se consulta al JKMT 48hs');
+    injeccionFirebird48();
+  });
+
+  // Intervalo de consulta al JKMT
+  // setInterval(() => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+  //   // let horaAhora = hoyAhora.getHours();
+  //   // let minutoAhora = hoyAhora.getMinutes();
+  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
+
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+
+  //   // Si es Viernes y es la hora indicada no se ejecuta nada. Lo mismo si es Sabado
+  //   if (diaHoy == 'Fri' && fullHoraAhora == horaQuery || diaHoy == 'Sat' && fullHoraAhora == horaQuery ) {
+  //     console.log("return");
+  //     return;
+  //   }
+
+  //   if (fullHoraAhora == horaQuery) {
+  //     //this.mood = "Trabajando! 👨🏻‍💻";
+  //     injeccionFirebird();
+  //     console.log("Se consulta al JKMT 48hs");
+  //   } else {
+  //     //this.mood = "Durmiendo! 😴";
+  //     console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
+  //   }
+  // }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
-  function injeccionFirebird() {
+  function injeccionFirebird48() {
     console.log("Se actualiza el PSQL 48hs");
     Firebird.attach(odontos, function (err, db) {
       if (err) throw err;
@@ -92,13 +113,15 @@ module.exports = function (app) {
             e.PLAN_CLIENTE = " ";
           }
           // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
-          if (e.HORA[3] === "0") {
-            e.HORA = e.HORA + "0";
-          }
+          // if (e.HORA[3] === "0") {
+          //   e.HORA = e.HORA + "0";
+          // }
+
           // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
           // if (e.HORA.length === 4 && e.HORA[0] === "1") {
           //   e.HORA = e.HORA + "0";
           // }
+
           // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
           // Si no reemplazar el 0 por el 595
           if (!e.TELEFONO_MOVIL) {
@@ -140,7 +163,7 @@ module.exports = function (app) {
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_72HS ROWS 5", function (err, result) {
+      "SELECT * FROM VW_RESUMEN_TURNOS_72HS", function (err, result) {
         console.log("Cant de turnos 72hs obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
@@ -153,30 +176,34 @@ module.exports = function (app) {
           if (!e.PLAN_CLIENTE) {
             e.PLAN_CLIENTE = " ";
           }
+
           // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
           // if (e.HORA[3] === "0") {
           //   e.HORA = e.HORA + "0";
           // }
+
           // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
-          if (e.HORA.length === 4 && e.HORA[0] === "1") {
-            e.HORA = e.HORA + "0";
-          }
-          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
-          // Si no reemplazar el 0 por el 595
-          // if (!e.TELEFONO_MOVIL) {
-          //   e.TELEFONO_MOVIL = "595000";
-          //   e.estado_envio = 2;
-          // } else {
-          //   e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
+          // if (e.HORA.length === 4 && e.HORA[0] === "1") {
+          //   e.HORA = e.HORA + "0";
           // }
 
-          // Reemplazar por mi nro para probar el envio
+          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
+          // Si no reemplazar el 0 por el 595
           if (!e.TELEFONO_MOVIL) {
             e.TELEFONO_MOVIL = "595000";
             e.estado_envio = 2;
           } else {
-            e.TELEFONO_MOVIL = "595986153301";
+            e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
           }
+
+          // Reemplazar por mi nro para probar el envio
+          // if (!e.TELEFONO_MOVIL) {
+          //   e.TELEFONO_MOVIL = "595000";
+          //   e.estado_envio = 2;
+          // } else {
+          //   e.TELEFONO_MOVIL = "595986153301";
+          // }
+
           Turnos48.create(e)
           //.then((result) => res.json(result))
           ["catch"](function (error) {
