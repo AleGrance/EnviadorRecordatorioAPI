@@ -20,10 +20,6 @@ odontos.blobAsText = false;
 const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 const templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
-// Hora de llamada a la función del JKMT
-var horaQuery = "07:00"; //AM
-// Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
-var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
 var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
@@ -32,17 +28,6 @@ var tiempoRetrasoEnvios = 4000;
 module.exports = (app) => {
   const Turnos48 = app.db.models.Turnos48;
   const Users = app.db.models.Users;
-
-  // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 8 * * 5,6', () => {
-    let hoyAhora = new Date();
-    let diaHoy = hoyAhora.toString().slice(0, 3);
-    let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-    
-    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log('CRON: Se consulta al JKMT 72hs');
-    injeccionFirebird72();
-  });
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
   cron.schedule('00 7 * * 1-4', () => {
@@ -55,33 +40,16 @@ module.exports = (app) => {
     injeccionFirebird48();
   });
 
-  // Intervalo de consulta al JKMT
-  // setInterval(() => {
-  //   let hoyAhora = new Date();
-  //   let diaHoy = hoyAhora.toString().slice(0, 3);
-  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-  //   // let horaAhora = hoyAhora.getHours();
-  //   // let minutoAhora = hoyAhora.getMinutes();
-  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
-  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-
-  //   // Si es Viernes y es la hora indicada no se ejecuta nada. Lo mismo si es Sabado
-  //   if (diaHoy == 'Fri' && fullHoraAhora == horaQuery || diaHoy == 'Sat' && fullHoraAhora == horaQuery ) {
-  //     console.log("return");
-  //     return;
-  //   }
-
-  //   if (fullHoraAhora == horaQuery) {
-  //     //this.mood = "Trabajando! 👨🏻‍💻";
-  //     injeccionFirebird();
-  //     console.log("Se consulta al JKMT 48hs");
-  //   } else {
-  //     //this.mood = "Durmiendo! 😴";
-  //     console.log("Enviador recordatorio 48hs ya no consulta al JKMT!");
-  //   }
-  // }, tiempoRetrasoSQL);
+  // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
+  cron.schedule('00 7 * * 5,6', () => {
+    let hoyAhora = new Date();
+    let diaHoy = hoyAhora.toString().slice(0, 3);
+    let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+    
+    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log('CRON: Se consulta al JKMT 72hs');
+    injeccionFirebird72();
+  });
 
   // Consulta al JKMT
   function injeccionFirebird48() {

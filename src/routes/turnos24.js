@@ -18,13 +18,8 @@ odontos.blobAsText = false;
 // Var para la conexion a WWA de ThinkComm
 //const url = "http://localhost:3001/lead";
 const url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-// Estimado Cliente, Odontos le informa que, como no hemos recibido su confirmación de asistencia al turno, el mismo será cancelado. [Cancelar turno] [Confirmar turno]
 const templateThikchat = "c2a1bc33-6a72-4fbf-bf0e-954759f8e547";
 
-// Hora de llamada a la función del JKMT
-var horaQuery = "08:00"; //AM
-// Tiempo de intervalo entre consultas a la base de JKMT para insertar en el PGSQL. 1 hora y se valida el horario establecido a las 07:00
-var tiempoRetrasoSQL = 60000 * 60;
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
 var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
@@ -34,7 +29,6 @@ module.exports = (app) => {
   const Turnos24 = app.db.models.Turnos24;
   const Users = app.db.models.Users;
 
-  // Intervalo de consulta al JKMT
   // Ejecutar la funcion de 24hs De Lunes(1) a Viernes(5) a las 08:00am
   cron.schedule("00 8 * * 1-5", () => {
     let hoyAhora = new Date();
@@ -45,27 +39,6 @@ module.exports = (app) => {
     console.log("CRON: Se consulta al JKMT 24hs");
     injeccionFirebird24();
   });
-
-  // setInterval(() => {
-  //   let hoyAhora = new Date();
-  //   let diaHoy = hoyAhora.toString().slice(0, 3);
-  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-  //   // let horaAhora = hoyAhora.getHours();
-  //   // let minutoAhora = hoyAhora.getMinutes();
-  //   // let horaMinutoAhora = horaAhora + ":" + minutoAhora;
-
-  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-
-  //   if (fullHoraAhora == horaQuery) {
-  //     //this.mood = "Trabajando! 👨🏻‍💻";
-  //     injeccionFirebird();
-  //     console.log("Se consulta al JKMT 24hs");
-  //   } else {
-  //     //this.mood = "Durmiendo! 😴";
-  //     console.log("Enviador recordatorio 24hs ya no consulta al JKMT!");
-  //   }
-  // }, tiempoRetrasoSQL);
 
   // Consulta al JKMT
   function injeccionFirebird24() {
