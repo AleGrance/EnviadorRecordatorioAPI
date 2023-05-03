@@ -14,7 +14,7 @@ module.exports = function (app) {
   var Historicos48 = app.db.models.Historicos48;
   var Turnos48 = app.db.models.Turnos48;
   var historicoObj = {
-    fecha: '',
+    fecha: "",
     cant_enviados: 0,
     cant_no_enviados: 0,
     user_id: 1
@@ -82,7 +82,7 @@ module.exports = function (app) {
     }));
     return _cantidadTicketsEnviados.apply(this, arguments);
   }
-  app.route("/historicos").get(function (req, res) {
+  app.route("/historicos48").get(function (req, res) {
     Historicos48.findAll().then(function (result) {
       return res.json(result);
     })["catch"](function (error) {
@@ -90,12 +90,13 @@ module.exports = function (app) {
         msg: error.menssage
       });
     });
+  }).post(function (req, res) {
+    Historicos48.create(req.body).then(function (result) {
+      return res.json(result);
+    })["catch"](function (error) {
+      return res.json(error);
+    });
   });
-  // .post((req, res) => {
-  //   Historicos48.create(req.body)
-  //     .then((result) => res.json(result))
-  //     .catch((error) => res.json(error));
-  // });
 
   // app
   //   .route("/roles/:role_id")

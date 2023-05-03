@@ -6,7 +6,7 @@ module.exports = (app) => {
   const Turnos24 = app.db.models.Turnos24;
 
   let historicoObj = {
-    fecha: '',
+    fecha: "",
     cant_enviados: 0,
     cant_no_enviados: 0,
     user_id: 1,
@@ -70,20 +70,22 @@ module.exports = (app) => {
    *
    */
 
-  app.route("/historicos").get((req, res) => {
-    Historicos24.findAll()
-      .then((result) => res.json(result))
-      .catch((error) => {
-        res.status(402).json({
-          msg: error.menssage,
+  app
+    .route("/historicos24")
+    .get((req, res) => {
+      Historicos24.findAll()
+        .then((result) => res.json(result))
+        .catch((error) => {
+          res.status(402).json({
+            msg: error.menssage,
+          });
         });
-      });
-  });
-  // .post((req, res) => {
-  //   Historicos24.create(req.body)
-  //     .then((result) => res.json(result))
-  //     .catch((error) => res.json(error));
-  // });
+    })
+    .post((req, res) => {
+      Historicos24.create(req.body)
+        .then((result) => res.json(result))
+        .catch((error) => res.json(error));
+    });
 
   // app
   //   .route("/roles/:role_id")
