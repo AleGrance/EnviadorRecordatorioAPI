@@ -7,283 +7,83 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _ty
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+var cron = require("node-cron");
 var _require = require("sequelize"),
   Op = _require.Op;
-var axios = require("axios");
-var cron = require("node-cron");
-var Firebird = require("node-firebird");
-
-// Var para la conexion a la base de JKMT
-var odontos = {};
-odontos.host = "192.168.10.247";
-odontos.port = 3050;
-odontos.database = "c:\\\\jakemate\\\\base\\\\ODONTOS64.fdb";
-odontos.user = "SYSDBA";
-odontos.password = "masterkey";
-odontos.lowercase_keys = false; // set to true to lowercase keys
-odontos.role = null; // default
-odontos.retryConnectionInterval = 1000; // reconnect interval in case of connection drop
-odontos.blobAsText = false;
-
-// Var para la conexion a WWA de ThinkComm
-//const url = "http://localhost:3001/lead";
-var url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
-var templateThikchat = "c2a1bc33-6a72-4fbf-bf0e-954759f8e547";
-
-// Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
-var tiempoRetrasoPGSQL = 1000 * 60;
-// Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
-var tiempoRetrasoEnvios = 4000;
 module.exports = function (app) {
+  var Historicos24 = app.db.models.Historicos24;
   var Turnos24 = app.db.models.Turnos24;
-  var Users = app.db.models.Users;
-
-  // Ejecutar la funcion de 24hs De Lunes(1) a Viernes(5) a las 08:00am
-  // cron.schedule("00 8 * * 1-5", () => {
-  //   let hoyAhora = new Date();
-  //   let diaHoy = hoyAhora.toString().slice(0, 3);
-  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-  //   console.log("CRON: Se consulta al JKMT 24hs");
-  //   injeccionFirebird24();
-  // });
-
-  /********************
-   * CRON CON BLACKLIST
-   ********************/
-
-  // Array para almacenar las fechas prohibidas
-  var blacklist = ["2023-05-02"];
-  cron.schedule("00 08 * * 1-5", function () {
-    var hoyAhora = new Date();
-    var diaHoy = hoyAhora.toString().slice(0, 3); //Fri
-    var fullHoraAhora = hoyAhora.toString().slice(16, 21); //12:20
-
-    var now = new Date();
-    var dateString = now.toISOString().split("T")[0];
-    if (blacklist.includes(dateString)) {
-      console.log("La fecha ".concat(dateString, " est\xE1 en la blacklist y no se ejecutar\xE1 la tarea."));
-      return;
-    }
-    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log("CRON: Se consulta al JKMT 24hs");
-    injeccionFirebird24();
-  });
-
-  // Consulta al JKMT
-  function injeccionFirebird24() {
-    console.log("Se actualiza el PSQL 24hs");
-    Firebird.attach(odontos, function (err, db) {
-      if (err) throw err;
-
-      // db = DATABASE
-      db.query(
-      // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_24HS", function (err, result) {
-        console.log("Cant de turnos 24hs obtenidos del JKMT:", result.length);
-
-        // Recorre el array que contiene los datos e inserta en la base de postgresql
-        result.forEach(function (e) {
-          // Si el nro de cert trae NULL cambiar por 000000
-          if (!e.CARNET) {
-            e.CARNET = " ";
-          }
-          // Si no tiene plan
-          if (!e.PLAN_CLIENTE) {
-            e.PLAN_CLIENTE = " ";
-          }
-          // Si la hora viene por ej: 11:0 entonces agregar el 0 al final
-          // if (e.HORA[3] === "0") {
-          //   e.HORA = e.HORA + "0";
-          // }
-          // Si la hora viene por ej: 10:3 o 11:2 entonces agregar el 0 al final
-          // if (e.HORA.length === 4 && e.HORA[0] === "1") {
-          //   e.HORA = e.HORA + "0";
-          // }
-
-          // Si el nro de tel trae NULL cambiar por 595000 y cambiar el estado a 2
-          // Si no reemplazar el 0 por el 595
-          if (!e.TELEFONO_MOVIL) {
-            e.TELEFONO_MOVIL = "595000";
-            e.estado_envio = 2;
-          } else {
-            e.TELEFONO_MOVIL = e.TELEFONO_MOVIL.replace(0, "595");
-          }
-
-          // Reemplazar por mi nro para probar el envio
-          // if (!e.TELEFONO_MOVIL) {
-          //   e.TELEFONO_MOVIL = "595000";
-          //   e.estado_envio = 2;
-          // } else {
-          //   e.TELEFONO_MOVIL = "595986153301";
-          // }
-
-          Turnos24.create(e)
-          //.then((result) => res.json(result))
-          ["catch"](function (error) {
-            return console.log(error.message);
-          });
-        });
-
-        // IMPORTANTE: cerrar la conexion
-        db.detach();
-        console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 24hs");
-        iniciarEnvio();
-      });
-    });
-  }
-  var losTurnos = [];
-  function iniciarEnvio() {
-    setTimeout(function () {
-      Turnos24.findAll({
-        where: {
-          estado_envio: 0
-        },
-        order: [["createdAt", "DESC"]]
-      }).then(function (result) {
-        losTurnos = result;
-        console.log("Enviando turnos 24hs:", losTurnos.length);
-      }).then(function () {
-        enviarMensaje();
-      })["catch"](function (error) {
-        res.status(402).json({
-          msg: error.menssage
-        });
-      });
-    }, tiempoRetrasoPGSQL);
-  }
-
-  // Envia los mensajes
-  var retraso = function retraso() {
-    return new Promise(function (r) {
-      return setTimeout(r, tiempoRetrasoEnvios);
-    });
+  var historicoObj = {
+    fecha: '',
+    cant_enviados: 0,
+    cant_no_enviados: 0,
+    user_id: 1
   };
-  function enviarMensaje() {
-    return _enviarMensaje.apply(this, arguments);
+
+  // Ejecutar la funcion a las 10:00 de Lunes(1) a Sabados (6)
+  cron.schedule("50 08 * * 1-5", function () {
+    var hoyAhora = new Date();
+    var diaHoy = hoyAhora.toString().slice(0, 3);
+    var fullHoraAhora = hoyAhora.toString().slice(16, 21);
+    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+    console.log("CRON: Se almacena el historico de los enviados hoy - 24hs");
+    cantidadTicketsEnviados();
+  });
+  function cantidadTicketsEnviados() {
+    return _cantidadTicketsEnviados.apply(this, arguments);
   }
-  /*
-  
-  Metodos
-  
-  */
-  function _enviarMensaje() {
-    _enviarMensaje = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-      var _loop, i;
-      return _regeneratorRuntime().wrap(function _callee$(_context2) {
-        while (1) switch (_context2.prev = _context2.next) {
+  /**
+   *
+   *  METODOS
+   *
+   */
+  function _cantidadTicketsEnviados() {
+    _cantidadTicketsEnviados = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+      var fechaHoy;
+      return _regeneratorRuntime().wrap(function _callee$(_context) {
+        while (1) switch (_context.prev = _context.next) {
           case 0:
-            console.log("Inicia el recorrido del for para enviar los turnos 24hs");
-            _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
-              var turnoId, data;
-              return _regeneratorRuntime().wrap(function _loop$(_context) {
-                while (1) switch (_context.prev = _context.next) {
-                  case 0:
-                    turnoId = losTurnos[i].id_turno;
-                    data = {
-                      action: "send_template",
-                      token: "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
-                      from: "595214129000",
-                      to: losTurnos[i].TELEFONO_MOVIL,
-                      template_id: templateThikchat,
-                      template_params: []
-                    }; // Funcion ajax para nodejs que realiza los envios a la API de TC
-                    axios.post(url, data).then(function (response) {
-                      console.log(response.data);
-                      if (response.data.success == true) {
-                        //console.log("Enviado");
-                        // Se actualiza el estado a 1
-                        var body = {
-                          estado_envio: 1
-                        };
-                        Turnos24.update(body, {
-                          where: {
-                            id_turno: turnoId
-                          }
-                        })
-                        //.then((result) => res.json(result))
-                        ["catch"](function (error) {
-                          res.status(412).json({
-                            msg: error.message
-                          });
-                        });
-                      } else {
-                        //console.log("No Enviado");
-                        // Se actualiza el estado a 2
-                        var _body = {
-                          estado_envio: 2
-                        };
-                        Turnos24.update(_body, {
-                          where: {
-                            id_turno: turnoId
-                          }
-                        })
-                        //.then((result) => res.json(result))
-                        ["catch"](function (error) {
-                          res.status(412).json({
-                            msg: error.message
-                          });
-                        });
-                      }
-                    })["catch"](function (error) {
-                      console.error("Ocurrió un error:", error);
-                    });
-                    _context.next = 5;
-                    return retraso();
-                  case 5:
-                  case "end":
-                    return _context.stop();
-                }
-              }, _loop);
+            // Fecha de hoy 2022-02-30
+            fechaHoy = new Date().toISOString().slice(0, 10);
+            historicoObj.fecha = fechaHoy;
+            _context.next = 4;
+            return Turnos24.count({
+              where: _defineProperty({}, Op.and, [{
+                estado_envio: 1
+              }, {
+                updatedAt: _defineProperty({}, Op.between, [fechaHoy + " 00:00:00", fechaHoy + " 23:59:59"])
+              }])
             });
-            i = 0;
-          case 3:
-            if (!(i < losTurnos.length)) {
-              _context2.next = 8;
-              break;
-            }
-            return _context2.delegateYield(_loop(), "t0", 5);
-          case 5:
-            i++;
-            _context2.next = 3;
-            break;
-          case 8:
+          case 4:
+            historicoObj.cant_enviados = _context.sent;
+            _context.next = 7;
+            return Turnos24.count({
+              where: _defineProperty({}, Op.and, [{
+                estado_envio: 2
+              }, {
+                updatedAt: _defineProperty({}, Op.between, [fechaHoy + " 00:00:00", fechaHoy + " 23:59:59"])
+              }])
+            });
+          case 7:
+            historicoObj.cant_no_enviados = _context.sent;
+            console.log(historicoObj);
+            Historicos24.create(historicoObj).then(function (result) {
+              console.log("Se inserto la cantidad de envios de hoy en historico!");
+            })
+            //.catch((error) => console.log(error.detail));
+            ["catch"](function (error) {
+              return console.log(error.message);
+            });
+          case 10:
           case "end":
-            return _context2.stop();
+            return _context.stop();
         }
       }, _callee);
     }));
-    return _enviarMensaje.apply(this, arguments);
+    return _cantidadTicketsEnviados.apply(this, arguments);
   }
-  app.route("/api/turnos24").get(function (req, res) {
-    Turnos24.findAll({
-      order: [["createdAt", "DESC"]]
-    }).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      res.status(402).json({
-        msg: error.menssage
-      });
-    });
-  }).post(function (req, res) {
-    console.log(req.body);
-    Turnos24.create(req.body).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      return res.json(error);
-    });
-  });
-
-  // Trae los turnos que tengan en el campo estado_envio = 0
-  app.route("/api/turnos24Pendientes").get(function (req, res) {
-    Turnos24.findAll({
-      where: {
-        estado_envio: 0
-      },
-      order: [["FECHA_CREACION", "ASC"]]
-      //limit: 5
-    }).then(function (result) {
+  app.route("/historicos").get(function (req, res) {
+    Historicos24.findAll().then(function (result) {
       return res.json(result);
     })["catch"](function (error) {
       res.status(402).json({
@@ -291,163 +91,46 @@ module.exports = function (app) {
       });
     });
   });
-
-  // Trae los turnos que ya fueron notificados hoy
-  app.route("/api/turnos24Notificados").get(function (req, res) {
-    // Fecha de hoy 2022-02-30
-    var fechaHoy = new Date().toISOString().slice(0, 10);
-    Turnos24.count({
-      where: _defineProperty({}, Op.and, [{
-        estado_envio: 1
-      }, {
-        updatedAt: _defineProperty({}, Op.between, [fechaHoy + " 00:00:00", fechaHoy + " 23:59:59"])
-      }])
-      //order: [["FECHA_CREACION", "DESC"]],
-    }).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      res.status(402).json({
-        msg: error.menssage
-      });
-    });
-  });
-
-  // Trae la cantidad de turnos enviados por rango de fecha desde hasta
-  app.route("/api/turnos24NotificadosFecha").post(function (req, res) {
-    var fechaHoy = new Date().toISOString().slice(0, 10);
-    var _req$body = req.body,
-      fecha_desde = _req$body.fecha_desde,
-      fecha_hasta = _req$body.fecha_hasta;
-    if (fecha_desde === "" && fecha_hasta === "") {
-      fecha_desde = fechaHoy;
-      fecha_hasta = fechaHoy;
-    }
-    if (fecha_hasta == "") {
-      fecha_hasta = fecha_desde;
-    }
-    if (fecha_desde == "") {
-      fecha_desde = fecha_hasta;
-    }
-    console.log(req.body);
-    Turnos24.count({
-      where: _defineProperty({}, Op.and, [{
-        estado_envio: 1
-      }, {
-        updatedAt: _defineProperty({}, Op.between, [fecha_desde + " 00:00:00", fecha_hasta + " 23:59:59"])
-      }])
-      //order: [["createdAt", "DESC"]],
-    }).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      res.status(402).json({
-        msg: error.menssage
-      });
-    });
-  });
-
-  // Metodos GET PUT y DELETE
-  app.route("/api/turnos24/:id_turno").get(function (req, res) {
-    Turnos24.findOne({
-      where: req.params,
-      include: [{
-        model: Users,
-        attributes: ["user_fullname"]
-      }]
-    }).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      res.status(404).json({
-        msg: error.message
-      });
-    });
-  }).put(function (req, res) {
-    Turnos24.update(req.body, {
-      where: req.params
-    }).then(function (result) {
-      return res.json(result);
-    })["catch"](function (error) {
-      res.status(412).json({
-        msg: error.message
-      });
-    });
-  })["delete"](function (req, res) {
-    //const id = req.params.id;
-    Turnos24.destroy({
-      where: req.params
-    }).then(function () {
-      return res.json(req.params);
-    })["catch"](function (error) {
-      res.status(412).json({
-        msg: error.message
-      });
-    });
-  });
-  // // Turnos no enviados - estado_envio 2 o 3
-  // app.route("/turnosNoNotificados").get((req, res) => {
-  //   // Fecha de hoy 2022-02-30
-  //   let fechaHoy = new Date().toISOString().slice(0, 10);
-  //   Turnos.count({
-  //     where: {
-  //       [Op.and]: [
-  //         { estado_envio: { [Op.in]: [2, 3] } },
-  //         {
-  //           updatedAt: {
-  //             [Op.between]: [fechaHoy + " 00:00:00", fechaHoy + " 23:59:59"],
-  //           },
-  //         },
-  //       ],
-  //     },
-  //     //order: [["FECHA_CREACION", "DESC"]],
-  //   })
+  // .post((req, res) => {
+  //   Historicos24.create(req.body)
   //     .then((result) => res.json(result))
-  //     .catch((error) => {
-  //       res.status(402).json({
-  //         msg: error.menssage,
-  //       });
-  //     });
+  //     .catch((error) => res.json(error));
   // });
 
-  // // Trae la cantidad de turnos enviados por rango de fecha desde hasta
-  // app.route("/turnosNoNotificadosFecha").post((req, res) => {
-  //   let fechaHoy = new Date().toISOString().slice(0, 10);
-  //   let { fecha_desde, fecha_hasta } = req.body;
-
-  //   if (fecha_desde === "" && fecha_hasta === "") {
-  //     fecha_desde = fechaHoy;
-  //     fecha_hasta = fechaHoy;
-  //   }
-
-  //   if (fecha_hasta == "") {
-  //     fecha_hasta = fecha_desde;
-  //   }
-
-  //   if (fecha_desde == "") {
-  //     fecha_desde = fecha_hasta;
-  //   }
-
-  //   console.log(req.body);
-
-  //   Turnos.count({
-  //     where: {
-  //       [Op.and]: [
-  //         { estado_envio: { [Op.in]: [2, 3] } },
-  //         {
-  //           updatedAt: {
-  //             [Op.between]: [
-  //               fecha_desde + " 00:00:00",
-  //               fecha_hasta + " 23:59:59",
-  //             ],
-  //           },
-  //         },
-  //       ],
-  //     },
-  //     //order: [["createdAt", "DESC"]],
-  //   })
-  //     .then((result) => res.json(result))
-  //     .catch((error) => {
-  //       res.status(402).json({
-  //         msg: error.menssage,
+  // app
+  //   .route("/roles/:role_id")
+  //   .get((req, res) => {
+  //     Roles.findOne({
+  //       where: req.params,
+  //     })
+  //       .then((result) => res.json(result))
+  //       .catch((error) => {
+  //         res.status(404).json({
+  //           msg: error.message,
+  //         });
   //       });
-  //     });
-  // });
+  //   })
+  //   .put((req, res) => {
+  //     Roles.update(req.body, {
+  //       where: req.params,
+  //     })
+  //       .then((result) => res.sendStatus(204))
+  //       .catch((error) => {
+  //         res.status(412).json({
+  //           msg: error.message,
+  //         });
+  //       });
+  //   })
+  //   .delete((req, res) => {
+  //     //const id = req.params.id;
+  //     Roles.destroy({
+  //       where: req.params,
+  //     })
+  //       .then(() => res.json(req.params))
+  //       .catch((error) => {
+  //         res.status(412).json({
+  //           msg: error.message,
+  //         });
+  //       });
+  //   });
 };
