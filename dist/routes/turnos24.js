@@ -54,7 +54,7 @@ module.exports = function (app) {
    ********************/
 
   // Array para almacenar las fechas prohibidas
-  var blacklist = ["2023-05-02"];
+  var blacklist = ["2023-05-02", "2023-05-16"];
   cron.schedule("00 08 * * 1-5", function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3); //Fri

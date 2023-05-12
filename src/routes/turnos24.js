@@ -45,7 +45,7 @@ module.exports = (app) => {
    ********************/
 
   // Array para almacenar las fechas prohibidas
-  const blacklist = ["2023-05-02"];
+  const blacklist = ["2023-05-02", "2023-05-16"];
 
   cron.schedule(
     "00 08 * * 1-5",
