@@ -30,15 +30,6 @@ module.exports = (app) => {
   const Users = app.db.models.Users;
 
   // Ejecutar la funcion de 24hs De Lunes(1) a Viernes(5) a las 08:00am
-  // cron.schedule("00 8 * * 1-5", () => {
-  //   let hoyAhora = new Date();
-  //   let diaHoy = hoyAhora.toString().slice(0, 3);
-  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-
-  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-  //   console.log("CRON: Se consulta al JKMT 24hs");
-  //   injeccionFirebird24();
-  // });
 
   /********************
    * CRON CON BLACKLIST
@@ -48,7 +39,7 @@ module.exports = (app) => {
   const blacklist = ["2023-05-02", "2023-05-16"];
 
   cron.schedule(
-    "00 08 * * 1-5",
+    "00 08 * * 2-5",
     () => {
       let hoyAhora = new Date();
       let diaHoy = hoyAhora.toString().slice(0, 3); //Fri
