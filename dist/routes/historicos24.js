@@ -98,6 +98,36 @@ module.exports = function (app) {
     });
   });
 
+  // Historicos por rango de fecha
+  app.route("/historicos24Fecha").post(function (req, res) {
+    var fechaHoy = new Date().toISOString().slice(0, 10);
+    var _req$body = req.body,
+      fecha_desde = _req$body.fecha_desde,
+      fecha_hasta = _req$body.fecha_hasta;
+    if (fecha_desde === "" && fecha_hasta === "") {
+      fecha_desde = fechaHoy;
+      fecha_hasta = fechaHoy;
+    }
+    if (fecha_hasta == "") {
+      fecha_hasta = fecha_desde;
+    }
+    if (fecha_desde == "") {
+      fecha_desde = fecha_hasta;
+    }
+    console.log(req.body);
+    Historicos24.findAll({
+      where: {
+        fecha: _defineProperty({}, Op.between, [fecha_desde + " 00:00:00", fecha_hasta + " 23:59:59"])
+      }
+    }).then(function (result) {
+      return res.json(result);
+    })["catch"](function (error) {
+      res.status(402).json({
+        msg: error.menssage
+      });
+    });
+  });
+
   // app
   //   .route("/roles/:role_id")
   //   .get((req, res) => {

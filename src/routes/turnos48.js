@@ -30,7 +30,7 @@ module.exports = (app) => {
   const Users = app.db.models.Users;
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
-  cron.schedule('00 7 * * 1-4', () => {
+  cron.schedule('00 8 * * 1-4', () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);
@@ -41,7 +41,7 @@ module.exports = (app) => {
   });
 
   // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 7 * * 5,6', () => {
+  cron.schedule('00 8 * * 5,6', () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);

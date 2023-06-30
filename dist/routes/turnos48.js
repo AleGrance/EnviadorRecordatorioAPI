@@ -39,7 +39,7 @@ module.exports = function (app) {
   var Users = app.db.models.Users;
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
-  cron.schedule('00 7 * * 1-4', function () {
+  cron.schedule('00 8 * * 1-4', function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
@@ -49,7 +49,7 @@ module.exports = function (app) {
   });
 
   // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 7 * * 5,6', function () {
+  cron.schedule('00 8 * * 5,6', function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);

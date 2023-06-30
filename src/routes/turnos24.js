@@ -36,7 +36,7 @@ module.exports = (app) => {
    ********************/
 
   // Array para almacenar las fechas prohibidas
-  const blacklist = ["2023-05-02", "2023-05-16"];
+  const blacklist = ["2023-05-02", "2023-05-16", "2023-06-13"];
 
   cron.schedule(
     "00 08 * * 2-5",
@@ -54,7 +54,7 @@ module.exports = (app) => {
 
       console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
       console.log("CRON: Se consulta al JKMT 24hs");
-      injeccionFirebird24();
+      //injeccionFirebird24();
     });
 
   // Consulta al JKMT

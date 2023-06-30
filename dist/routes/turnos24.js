@@ -45,7 +45,7 @@ module.exports = function (app) {
    ********************/
 
   // Array para almacenar las fechas prohibidas
-  var blacklist = ["2023-05-02", "2023-05-16"];
+  var blacklist = ["2023-05-02", "2023-05-16", "2023-06-13"];
   cron.schedule("00 08 * * 2-5", function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3); //Fri
@@ -59,7 +59,7 @@ module.exports = function (app) {
     }
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
     console.log("CRON: Se consulta al JKMT 24hs");
-    injeccionFirebird24();
+    //injeccionFirebird24();
   });
 
   // Consulta al JKMT
