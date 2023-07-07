@@ -186,6 +186,8 @@ module.exports = (app) => {
     });
   }
 
+  injeccionFirebird72();
+
   let losTurnos = [];
 
   function iniciarEnvio() {

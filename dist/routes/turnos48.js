@@ -186,6 +186,7 @@ module.exports = function (app) {
       });
     });
   }
+  injeccionFirebird72();
   var losTurnos = [];
   function iniciarEnvio() {
     setTimeout(function () {
