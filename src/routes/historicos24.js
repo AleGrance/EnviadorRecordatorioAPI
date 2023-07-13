@@ -12,16 +12,17 @@ module.exports = (app) => {
     user_id: 1,
   };
 
+  // DESHABILITADO!!!
   // Ejecutar la funcion a las 10:00 de Lunes(1) a Sabados (6)
-  cron.schedule("50 08 * * 1-5", () => {
-    let hoyAhora = new Date();
-    let diaHoy = hoyAhora.toString().slice(0, 3);
-    let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+  // cron.schedule("50 08 * * 1-5", () => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
 
-    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log("CRON: Se almacena el historico de los enviados hoy - 24hs");
-    cantidadTicketsEnviados();
-  });
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+  //   console.log("CRON: Se almacena el historico de los enviados hoy - 24hs");
+  //   cantidadTicketsEnviados();
+  // });
 
   async function cantidadTicketsEnviados() {
     // Fecha de hoy 2022-02-30

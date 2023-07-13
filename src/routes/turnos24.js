@@ -38,24 +38,25 @@ module.exports = (app) => {
   // Array para almacenar las fechas prohibidas
   const blacklist = ["2023-05-02", "2023-05-16", "2023-06-13"];
 
-  cron.schedule(
-    "00 08 * * 2-5",
-    () => {
-      let hoyAhora = new Date();
-      let diaHoy = hoyAhora.toString().slice(0, 3); //Fri
-      let fullHoraAhora = hoyAhora.toString().slice(16, 21); //12:20
+  // DESHABILITADO!!!
+  // cron.schedule(
+  //   "00 08 * * 2-5",
+  //   () => {
+  //     let hoyAhora = new Date();
+  //     let diaHoy = hoyAhora.toString().slice(0, 3); //Fri
+  //     let fullHoraAhora = hoyAhora.toString().slice(16, 21); //12:20
 
-      const now = new Date();
-      const dateString = now.toISOString().split("T")[0];
-      if (blacklist.includes(dateString)) {
-        console.log(`La fecha ${dateString} está en la blacklist y no se ejecutará la tarea.`);
-        return;
-      }
+  //     const now = new Date();
+  //     const dateString = now.toISOString().split("T")[0];
+  //     if (blacklist.includes(dateString)) {
+  //       console.log(`La fecha ${dateString} está en la blacklist y no se ejecutará la tarea.`);
+  //       return;
+  //     }
 
-      console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-      console.log("CRON: Se consulta al JKMT 24hs");
-      //injeccionFirebird24();
-    });
+  //     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+  //     console.log("CRON: Se consulta al JKMT 24hs");
+  //     //injeccionFirebird24();
+  //   });
 
   // Consulta al JKMT
   function injeccionFirebird24() {

@@ -20,15 +20,17 @@ module.exports = function (app) {
     user_id: 1
   };
 
+  // DESHABILITADO!!!
   // Ejecutar la funcion a las 10:00 de Lunes(1) a Sabados (6)
-  cron.schedule("50 08 * * 1-5", function () {
-    var hoyAhora = new Date();
-    var diaHoy = hoyAhora.toString().slice(0, 3);
-    var fullHoraAhora = hoyAhora.toString().slice(16, 21);
-    console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log("CRON: Se almacena el historico de los enviados hoy - 24hs");
-    cantidadTicketsEnviados();
-  });
+  // cron.schedule("50 08 * * 1-5", () => {
+  //   let hoyAhora = new Date();
+  //   let diaHoy = hoyAhora.toString().slice(0, 3);
+  //   let fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+  //   console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
+  //   console.log("CRON: Se almacena el historico de los enviados hoy - 24hs");
+  //   cantidadTicketsEnviados();
+  // });
   function cantidadTicketsEnviados() {
     return _cantidadTicketsEnviados.apply(this, arguments);
   }

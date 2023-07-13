@@ -38,8 +38,8 @@ module.exports = function (app) {
   var Turnos48 = app.db.models.Turnos48;
   var Users = app.db.models.Users;
 
-  // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 07:00am
-  cron.schedule('00 8 * * 1-4', function () {
+  // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 08:00am
+  cron.schedule('00 08 * * 1-4', function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
@@ -49,7 +49,7 @@ module.exports = function (app) {
   });
 
   // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 8 * * 5,6', function () {
+  cron.schedule('00 08 * * 5,6', function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
@@ -67,7 +67,9 @@ module.exports = function (app) {
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_48HS", function (err, result) {
+      //"SELECT * FROM VW_RESUMEN_TURNOS_48HS",
+      // Se excluye a las sucursales
+      "SELECT * FROM VW_RESUMEN_TURNOS_48HS_EXC", function (err, result) {
         console.log("Cant de turnos obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
@@ -131,7 +133,7 @@ module.exports = function (app) {
       // db = DATABASE
       db.query(
       // Trae los ultimos 50 registros de turnos del JKMT
-      "SELECT * FROM VW_RESUMEN_TURNOS_72HS", function (err, result) {
+      "SELECT * FROM VW_RESUMEN_TURNOS_72HS_EXC", function (err, result) {
         console.log("Cant de turnos 72hs obtenidos del JKMT:", result.length);
 
         // Recorre el array que contiene los datos e inserta en la base de postgresql
@@ -186,7 +188,6 @@ module.exports = function (app) {
       });
     });
   }
-  injeccionFirebird72();
   var losTurnos = [];
   function iniciarEnvio() {
     setTimeout(function () {
