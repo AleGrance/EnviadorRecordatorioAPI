@@ -51,7 +51,7 @@ module.exports = (app) => {
     injeccionFirebird72();
   });
 
-  // Consulta al JKMT
+  // Consulta al JKMT 48
   function injeccionFirebird48() {
     console.log("Se actualiza el PSQL 48hs");
     Firebird.attach(odontos, function (err, db) {
@@ -120,7 +120,7 @@ module.exports = (app) => {
     });
   }
 
-  // Consulta al JKMT
+  // Consulta al JKMT 72
   function injeccionFirebird72() {
     console.log("Se actualiza el PSQL 72hs");
     Firebird.attach(odontos, function (err, db) {
