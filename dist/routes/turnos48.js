@@ -30,6 +30,9 @@ odontos.blobAsText = false;
 var url = "https://odontos.whatsapp.net.py/thinkcomm-x/integrations/odontos/";
 var templateThikchat = "883acf57-9c9c-465c-81b4-2f16feaf4371";
 
+// Blacklist fechas
+var blacklist = ["2023-05-02", "2023-05-16", "2023-08-15"];
+
 // Tiempo de retraso de consulta al PGSQL para iniciar el envio. 1 minuto
 var tiempoRetrasoPGSQL = 1000 * 60;
 // Tiempo entre envios. Cada 4 segundos envía un mensaje a la API de Thinkcomm
@@ -37,7 +40,6 @@ var tiempoRetrasoEnvios = 4000;
 module.exports = function (app) {
   var Turnos48 = app.db.models.Turnos48;
   var Users = app.db.models.Users;
-  var blacklist = ["2023-05-02", "2023-05-16", "2023-08-15"];
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 08:00am
   cron.schedule("00 08 * * 1-4", function () {
@@ -62,6 +64,14 @@ module.exports = function (app) {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+    // Checkear la blacklist antes de ejecutar la función
+    var now = new Date();
+    var dateString = now.toISOString().split("T")[0];
+    if (blacklist.includes(dateString)) {
+      console.log("La fecha ".concat(dateString, " est\xE1 en la blacklist y no se ejecutar\xE1 la tarea."));
+      return;
+    }
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
     console.log("CRON: Se consulta al JKMT 72hs");
     injeccionFirebird72();
