@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const axios = require("axios");
-const cron = require('node-cron');
+const cron = require("node-cron");
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -28,26 +28,35 @@ var tiempoRetrasoEnvios = 4000;
 module.exports = (app) => {
   const Turnos48 = app.db.models.Turnos48;
   const Users = app.db.models.Users;
+  const blacklist = ["2023-05-02", "2023-05-16", "2023-08-15"];
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 08:00am
-  cron.schedule('00 08 * * 1-4', () => {
+  cron.schedule("00 08 * * 1-4", () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-    
+
+    // Checkear la blacklist antes de ejecutar la función
+    const now = new Date();
+    const dateString = now.toISOString().split("T")[0];
+    if (blacklist.includes(dateString)) {
+      console.log(`La fecha ${dateString} está en la blacklist y no se ejecutará la tarea.`);
+      return;
+    }
+
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log('CRON: Se consulta al JKMT 48hs');
+    console.log("CRON: Se consulta al JKMT 48hs");
     injeccionFirebird48();
   });
 
   // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 08 * * 5,6', () => {
+  cron.schedule("00 08 * * 5,6", () => {
     let hoyAhora = new Date();
     let diaHoy = hoyAhora.toString().slice(0, 3);
     let fullHoraAhora = hoyAhora.toString().slice(16, 21);
-    
+
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log('CRON: Se consulta al JKMT 72hs');
+    console.log("CRON: Se consulta al JKMT 72hs");
     injeccionFirebird72();
   });
 
@@ -63,7 +72,7 @@ module.exports = (app) => {
         //"SELECT * FROM VW_RESUMEN_TURNOS_48HS",
         // Se excluye a las sucursales
         "SELECT * FROM VW_RESUMEN_TURNOS_48HS_EXC",
-        
+
         function (err, result) {
           console.log("Cant de turnos obtenidos del JKMT:", result.length);
 
@@ -111,9 +120,7 @@ module.exports = (app) => {
 
           // IMPORTANTE: cerrar la conexion
           db.detach();
-          console.log(
-            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs"
-          );
+          console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs");
           iniciarEnvio();
         }
       );
@@ -130,7 +137,7 @@ module.exports = (app) => {
       db.query(
         // Trae los ultimos 50 registros de turnos del JKMT
         "SELECT * FROM VW_RESUMEN_TURNOS_72HS_EXC",
-        
+
         function (err, result) {
           console.log("Cant de turnos 72hs obtenidos del JKMT:", result.length);
 
@@ -179,14 +186,14 @@ module.exports = (app) => {
 
           // IMPORTANTE: cerrar la conexion
           db.detach();
-          console.log(
-            "Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs"
-          );
+          console.log("Llama a la funcion iniciar envio que se retrasa 1 min en ejecutarse 48hs");
           iniciarEnvio();
         }
       );
     });
   }
+
+  //injeccionFirebird72();
 
   let losTurnos = [];
 
@@ -219,8 +226,7 @@ module.exports = (app) => {
       const turnoId = losTurnos[i].id_turno;
       const data = {
         action: "send_template",
-        token:
-          "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
+        token: "tk162c5b6f2cfaf4982acddd9ee1a978c39c349acfaf9d24c750dcaf9caf7392c7",
         from: "595214129000",
         to: losTurnos[i].TELEFONO_MOVIL,
         template_id: templateThikchat,
@@ -373,10 +379,7 @@ module.exports = (app) => {
           { estado_envio: 1 },
           {
             updatedAt: {
-              [Op.between]: [
-                fecha_desde + " 00:00:00",
-                fecha_hasta + " 23:59:59",
-              ],
+              [Op.between]: [fecha_desde + " 00:00:00", fecha_hasta + " 23:59:59"],
             },
           },
         ],

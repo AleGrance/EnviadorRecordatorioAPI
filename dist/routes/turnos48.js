@@ -10,7 +10,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 var _require = require("sequelize"),
   Op = _require.Op;
 var axios = require("axios");
-var cron = require('node-cron');
+var cron = require("node-cron");
 var Firebird = require("node-firebird");
 
 // Var para la conexion a la base de JKMT
@@ -37,24 +37,33 @@ var tiempoRetrasoEnvios = 4000;
 module.exports = function (app) {
   var Turnos48 = app.db.models.Turnos48;
   var Users = app.db.models.Users;
+  var blacklist = ["2023-05-02", "2023-05-16", "2023-08-15"];
 
   // Ejecutar la funcion de 48hs de Lunes(1) a Jueves (4) a las 08:00am
-  cron.schedule('00 08 * * 1-4', function () {
+  cron.schedule("00 08 * * 1-4", function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
+
+    // Checkear la blacklist antes de ejecutar la función
+    var now = new Date();
+    var dateString = now.toISOString().split("T")[0];
+    if (blacklist.includes(dateString)) {
+      console.log("La fecha ".concat(dateString, " est\xE1 en la blacklist y no se ejecutar\xE1 la tarea."));
+      return;
+    }
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log('CRON: Se consulta al JKMT 48hs');
+    console.log("CRON: Se consulta al JKMT 48hs");
     injeccionFirebird48();
   });
 
   // Ejecutar la funcion de 72hs los Viernes(5) y Sabados(6)
-  cron.schedule('00 08 * * 5,6', function () {
+  cron.schedule("00 08 * * 5,6", function () {
     var hoyAhora = new Date();
     var diaHoy = hoyAhora.toString().slice(0, 3);
     var fullHoraAhora = hoyAhora.toString().slice(16, 21);
     console.log("Hoy es:", diaHoy, "la hora es:", fullHoraAhora);
-    console.log('CRON: Se consulta al JKMT 72hs');
+    console.log("CRON: Se consulta al JKMT 72hs");
     injeccionFirebird72();
   });
 
@@ -188,6 +197,9 @@ module.exports = function (app) {
       });
     });
   }
+
+  //injeccionFirebird72();
+
   var losTurnos = [];
   function iniciarEnvio() {
     setTimeout(function () {
